@@ -4,7 +4,7 @@ import java.sql.DriverManager;
 import java.sql.*;
 import java.util.Scanner;
 
-public class TestDelete implements Command{
+public class TestAdd implements Command{
     /**
      * JDBC Driver and database url
      */
@@ -25,7 +25,6 @@ public class TestDelete implements Command{
         Scanner in = new Scanner(System.in);
         System.out.println("таблица");
         String table = in.nextLine();
-        //in.close();
 
         String sql = "SELECT * FROM " + table;
         PreparedStatement statement = connection.prepareStatement(sql);
@@ -37,9 +36,9 @@ public class TestDelete implements Command{
                 ResultSetMetaData rsmd = (rs.getMetaData());
                 for (int i = 1; i <= rsmd.getColumnCount(); i++) {
                     String name = rsmd.getColumnName(i);
+                    int type = rsmd.getColumnType(i);
                     out.print(name + "  ");
 
-                    int type = rsmd.getColumnType(i);
                     if (type == Types.VARCHAR || type == Types.CHAR) {
                         out.println(rs.getString(i) + " ");
                     } else {
@@ -52,12 +51,42 @@ public class TestDelete implements Command{
             }
         }
 
-        System.out.println("ведите значение");
-        String vvod = in.nextLine();
+        System.out.println("Creating table in selected database...");
 
-        System.out.println("Removing record with id = "+ vvod);
-        String SQL = "DELETE FROM " + table + " WHERE Item_Id = " + vvod;
-        statement.executeUpdate(SQL);
+        assert rs != null;
+        ResultSetMetaData rsd = rs.getMetaData();
+        String h = "(";
+        for (int i = 1; i <= rsd.getColumnCount(); i++) {
+
+            int typ = rsd.getColumnType(i);
+            System.out.println("ведите значение");
+            String vvod = in.nextLine();
+
+            switch (typ) {
+                case Types.VARCHAR:
+                    if(i == rsd.getColumnCount()) {
+                        h += "'" + vvod + "')";
+                        break;
+                    } else{
+                        h += "'" + vvod + "', ";
+                        break;
+                    }
+                case Types.INTEGER:
+                    if(i == rsd.getColumnCount()) {
+                        h += "" + vvod + ")";
+                        break;
+                    } else{
+                        h += "" + vvod + ", ";
+                        break;
+                    }
+            }
+            out.println(h);
+        }
+
+        String SQL = "INSERT INTO " + table + " VALUES " + h;
+
+       statement.executeUpdate(SQL);
+       System.out.println("Table successfully created...");
 
         System.out.println("Getting records...");
         String s = "SELECT * FROM " + table;
